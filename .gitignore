@@ -139,3 +139,8 @@ fabric.properties
 /.idea/php.xml
 /.idea/TdA24-prestiz.iml
 /.idea/vcs.xml
+
+
+# js and vendor
+node_modules
+public/js/*.js

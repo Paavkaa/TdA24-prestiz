@@ -9,7 +9,7 @@ $router->get('/', function () {
 });
 
 $router->get('/api', 'Api@get');
-$router->get('/lektor', 'Lektor@get');
+$router->get('/api/lektor', 'Lektor@get');
 // Add more routes as needed
 
 $router->handleRequest();

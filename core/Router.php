@@ -51,7 +51,7 @@ class Router {
                 $controllerInstance = $this->container->get($controllerClassName);
             } catch (\Exception $e) {
                 http_response_code(500);
-                echo "Internal Server Error";
+                echo "Internal Server Error ".$e->getMessage();
                 return;
             }
 

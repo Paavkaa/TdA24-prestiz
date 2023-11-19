@@ -143,4 +143,4 @@ fabric.properties
 
 # js and vendor
 node_modules
-public/js/*.js
+public/js/*/*.js

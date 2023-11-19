@@ -20,6 +20,7 @@ fi
 service mariadb start
 echo "mysql password : $MYSQL_ROOT_PASSWORD"
 echo "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD' WITH GRANT OPTION;" | mysql
+echo "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$MYSQL_ROOT_PASSWORD');" | mysql
 echo "FLUSH PRIVILEGES;" | mysql
 # Create the database
 echo "CREATE DATABASE IF NOT EXISTS db" | mysql

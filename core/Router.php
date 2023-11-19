@@ -1,10 +1,13 @@
 <?php
 
 namespace Core;
-
+use DI\Container;
 class Router {
     private $routes = [];
-
+    private readonly Container $container;
+    public function __construct() {
+        $this->container = new Container();
+    }
     public function get($path, $handler) {
         $this->routes['GET'][$path] = $handler;
     }
@@ -44,7 +47,13 @@ class Router {
             list($controller, $action) = explode('@', $handler);
 
             $controllerClassName = "App\\Controllers\\" . $controller;
-            $controllerInstance = new $controllerClassName();
+            try {
+                $controllerInstance = $this->container->get($controllerClassName);
+            } catch (\Exception $e) {
+                http_response_code(500);
+                echo "Internal Server Error";
+                return;
+            }
 
             if (method_exists($controllerInstance, $action)) {
                 // Call the controller action method

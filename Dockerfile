@@ -6,6 +6,8 @@ COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
 
+ENV MYSQL_ROOT_PASSWORD='root'
+ENV MYSQL_ROOT_HOST=0.0.0.0
 WORKDIR /var/www/html
 # Install system dependencies and MariaDB
 RUN apt-get update && \
@@ -21,6 +23,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN a2enmod rewrite
 
 # Copy the application code to the container
+COPY my.cnf /etc/mysql/conf.d/
 COPY . .
 # Install PHP dependencies
 RUN composer install --no-interaction --no-ansi --no-scripts

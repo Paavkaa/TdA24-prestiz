@@ -8,41 +8,65 @@ class Router {
     public function __construct() {
         $this->container = new Container();
     }
-    public function get($path, $handler) {
-        $this->routes['GET'][$path] = $handler;
+    public function addRoute(string $method, string $path, string $handler): void
+    {
+        $this->routes[$method][$path] = $handler;
+
     }
 
-    public function post($path, $handler) {
-        $this->routes['POST'][$path] = $handler;
-    }
-
-    public function put($path, $handler) {
-        $this->routes['PUT'][$path] = $handler;
-    }
-
-    public function delete($path, $handler) {
-        $this->routes['DELETE'][$path] = $handler;
-    }
-
-    public function handleRequest() {
+    public function handleRequest(): void
+    {
         $method = $_SERVER['REQUEST_METHOD'];
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-        if (isset($this->routes[$method][$path])) {
-            $handler = $this->routes[$method][$path];
-            $this->callHandler($handler);
-        } else {
-            // Handle 404 Not Found
-            http_response_code(404);
-            echo "Not Found";
+        if (isset($this->routes[$method])) {
+            foreach ($this->routes[$method] as $routePath => $handler) {
+                $pattern = $this->getRouteRegex($routePath);
+
+                if (preg_match($pattern, $path, $matches)) {
+                    // Remove the full match from the beginning of the array
+                    array_shift($matches);
+
+                    // Create an associative array of parameter names and values
+                    $params = (object)array_combine($this->getParameterNames($routePath), $matches);
+                    print_r($params);
+
+                    // Call the handler with the matched parameters
+                    $this->callHandler($handler, $params);
+                    return;
+                }
+            }
         }
+
+        // Handle 404 Not Found
+        http_response_code(404);
+        echo "Not Found";
     }
 
-    private function callHandler($handler) {
+    private function getParameterNames($routePath): array
+    {
+        preg_match_all('/{([^\/]+)}/', $routePath, $matches);
+        return $matches[1];
+    }
+
+    private function getRouteRegex($routePath): string
+    {
+        // Convert route path to a regex pattern
+        $pattern = preg_replace_callback('/{([^\/]+)}/', function($matches) {
+            return '([^\/]+)';
+        }, $routePath);
+
+        // Add delimiters and make it case-insensitive
+        return '@^' . $pattern . '$@i';
+    }
+
+
+    private function callHandler($handler): void
+    {
         if (is_callable($handler)) {
             // If the handler is a callable function, call it
             call_user_func($handler);
-        } elseif (is_string($handler) && strpos($handler, '@') !== false) {
+        } elseif (is_string($handler) && str_contains($handler, '@')) {
             // If the handler is in the "Controller@action" format
             list($controller, $action) = explode('@', $handler);
 

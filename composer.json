@@ -6,5 +6,9 @@
       "App\\": "app/",
       "Core\\": "core/"
     }
+  },
+  "require": {
+    "ext-pdo": "*",
+    "php-di/php-di": "^7.0"
   }
 }

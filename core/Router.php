@@ -28,15 +28,45 @@ class Router {
         $method = $_SERVER['REQUEST_METHOD'];
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-        if (isset($this->routes[$method][$path])) {
-            $handler = $this->routes[$method][$path];
-            $this->callHandler($handler);
-        } else {
-            // Handle 404 Not Found
-            http_response_code(404);
-            echo "Not Found";
+        if (isset($this->routes[$method])) {
+            foreach ($this->routes[$method] as $routePath => $handler) {
+                $pattern = $this->getRouteRegex($routePath);
+
+                if (preg_match($pattern, $path, $matches)) {
+                    // Remove the full match from the beginning of the array
+                    array_shift($matches);
+
+                    // Create an associative array of parameter names and values
+                    $params = array_combine($this->getParameterNames($routePath), $matches);
+                    print_r($params);
+
+                    // Call the handler with the matched parameters
+                    $this->callHandler($handler, $params);
+                    return;
+                }
+            }
         }
+
+        // Handle 404 Not Found
+        http_response_code(404);
+        echo "Not Found";
     }
+
+    private function getParameterNames($routePath) {
+        preg_match_all('/{([^\/]+)}/', $routePath, $matches);
+        return $matches[1];
+    }
+
+    private function getRouteRegex($routePath) {
+        // Convert route path to a regex pattern
+        $pattern = preg_replace_callback('/{([^\/]+)}/', function($matches) {
+            return '([^\/]+)';
+        }, $routePath);
+
+        // Add delimiters and make it case-insensitive
+        return '@^' . $pattern . '$@i';
+    }
+
 
     private function callHandler($handler) {
         if (is_callable($handler)) {

@@ -2,7 +2,7 @@
 
 require "../vendor/autoload.php";
 
-$router = new App\Router();
+$router = new Core\Router();
 
 $router->get('/', function () {
     echo "Hello, this is the home page!";

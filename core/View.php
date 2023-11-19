@@ -1,5 +1,5 @@
 <?php
-namespace App\Views;
+namespace Core;
 
 class View {
     protected string  $viewFile;

@@ -1,0 +1,14 @@
+{
+  "name": "your/project",
+  "description": "Your project description",
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/",
+      "Core\\": "core/"
+    }
+  },
+  "require": {
+    "ext-pdo": "*",
+    "php-di/php-di": "^7.0"
+  }
+}

@@ -1,10 +1,13 @@
 <?php
-namespace Core;
 
-class View {
-    protected string  $viewFile;
+namespace App\Views;
 
-    public function __construct($viewFile) {
+class View
+{
+    protected string $viewFile;
+
+    public function __construct($viewFile)
+    {
         $this->viewFile = $viewFile;
     }
 

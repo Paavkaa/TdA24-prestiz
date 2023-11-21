@@ -1,13 +1,19 @@
 <?php
 
 namespace Core;
+
 use DI\Container;
-class Router {
+
+class Router
+{
     private $routes = [];
     private readonly Container $container;
-    public function __construct() {
+
+    public function __construct()
+    {
         $this->container = new Container();
     }
+
     public function addRoute(string $method, string $path, string $handler): void
     {
         $this->routes[$method][$path] = $handler;
@@ -29,7 +35,6 @@ class Router {
 
                     // Create an associative array of parameter names and values
                     $params = (object)array_combine($this->getParameterNames($routePath), $matches);
-                    print_r($params);
 
                     // Call the handler with the matched parameters
                     $this->callHandler($handler, $params);
@@ -43,16 +48,10 @@ class Router {
         echo "Not Found";
     }
 
-    private function getParameterNames($routePath): array
-    {
-        preg_match_all('/{([^\/]+)}/', $routePath, $matches);
-        return $matches[1];
-    }
-
     private function getRouteRegex($routePath): string
     {
         // Convert route path to a regex pattern
-        $pattern = preg_replace_callback('/{([^\/]+)}/', function($matches) {
+        $pattern = preg_replace_callback('/{([^\/]+)}/', function ($matches) {
             return '([^\/]+)';
         }, $routePath);
 
@@ -60,6 +59,11 @@ class Router {
         return '@^' . $pattern . '$@i';
     }
 
+    private function getParameterNames($routePath): array
+    {
+        preg_match_all('/{([^\/]+)}/', $routePath, $matches);
+        return $matches[1];
+    }
 
     private function callHandler($handler): void
     {
@@ -75,7 +79,7 @@ class Router {
                 $controllerInstance = $this->container->get($controllerClassName);
             } catch (\Exception $e) {
                 http_response_code(500);
-                echo "Internal Server Error ".$e->getMessage();
+                echo "Internal Server Error " . $e->getMessage();
                 return;
             }
 

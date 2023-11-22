@@ -40,7 +40,7 @@ RUN echo '<VirtualHost *:80>\n\
         AllowOverride All\n\
         Require all granted\n\
     </Directory>\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf \
+</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
 # Copy the application code to the container
 COPY my.cnf /etc/mysql/conf.d/

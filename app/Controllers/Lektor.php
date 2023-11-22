@@ -9,12 +9,12 @@ use \App\Views\View;
 class Lektor extends Controller
 {
     public function __construct(
-        private readonly Database $database,
+        //private readonly Database $database,
     )
     {
     }
 
-    public function get(): void
+    /*public function get(): void
     {
         echo 'Hello from Lektor controller!';
         $conn = $this->database->getConnection();
@@ -23,7 +23,7 @@ class Lektor extends Controller
         $stmt->execute();
         $lektor = $stmt->fetchAll();
         echo json_encode($lektor);
-    }
+    }*/
 
     public function index(): void
     {

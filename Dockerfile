@@ -42,6 +42,12 @@ RUN echo '<VirtualHost *:80>\n\
     </Directory>\n\
 </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
+ENV MYSQL_ROOT_PASSWORD='root'
+ENV MYSQL_PHP_HOST='127.0.0.1'
+ENV MYSQL_DATABASE='db'
+ENV MYSQL_USER='root'
+ENV MYSQL_CHARSET='utf8mb4'
+ENV MYSQL_ROOT_HOST=0.0.0.0
 # Copy the application code to the container
 COPY my.cnf /etc/mysql/conf.d/
 COPY . .
@@ -51,12 +57,6 @@ RUN tsc
 # Expose port 80
 EXPOSE 80
 
-ENV MYSQL_ROOT_PASSWORD='root'
-ENV MYSQL_PHP_HOST='127.0.0.1'
-ENV MYSQL_DATABASE='db'
-ENV MYSQL_USER='root'
-ENV MYSQL_CHARSET='utf8mb4'
-ENV MYSQL_ROOT_HOST=0.0.0.0
 
 # Copy start.sh and make it executable
 COPY start.sh /start.sh

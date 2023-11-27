@@ -205,7 +205,6 @@ GROUP BY
                         ':uuid' => $tag_uuid,
                         ':name' => $tag['name']
                     ]);
-                    $tag_uuid = $pdo->lastInsertId();
                 }
 
                 // Vložení vazby mezi uživatelem a tagem

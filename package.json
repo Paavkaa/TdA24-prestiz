@@ -1,5 +1,13 @@
 {
+  "scripts": {
+    "watch": "node tasks/watch",
+    "run": "tasks/run/run.sh"
+  },
   "devDependencies": {
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "ignore": "^5.3.0"
   }
 }

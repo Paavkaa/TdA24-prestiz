@@ -45,7 +45,7 @@ class Router
 
         // Handle 404 Not Found
         http_response_code(404);
-        echo "Not Found";
+        echo "Not Found methode";
     }
 
     private function getRouteRegex($routePath): string
@@ -65,7 +65,7 @@ class Router
         return $matches[1];
     }
 
-    private function callHandler($handler): void
+    private function callHandler($handler, $params): void
     {
         if (is_callable($handler)) {
             // If the handler is a callable function, call it
@@ -85,11 +85,15 @@ class Router
 
             if (method_exists($controllerInstance, $action)) {
                 // Call the controller action method
-                $controllerInstance->$action();
+                if ($params) {
+                    $controllerInstance->$action($params);
+                } else {
+                    $controllerInstance->$action();
+                }
             } else {
                 // Handle 404 Not Found for missing action
                 http_response_code(404);
-                echo "Not Found";
+                echo "Not Found 404";
             }
         } else {
             // Handle invalid handler format

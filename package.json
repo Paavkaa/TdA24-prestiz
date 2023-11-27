@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "watch": "node tasks/watch"
+    "watch": "node tasks/watch",
+    "run": "tasks/run/run.sh"
   },
   "devDependencies": {
     "typescript": "^5.2.2"

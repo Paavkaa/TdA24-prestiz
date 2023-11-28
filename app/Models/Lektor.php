@@ -174,16 +174,16 @@ GROUP BY
         $stmt = $pdo->prepare($query);
         $stmt->execute([
             ':uuid' => $user_uuid,
-            ':title_before' => $data['title_before'],
-            ':first_name' => $data['first_name'],
-            ':middle_name' => $data['middle_name'],
-            ':last_name' => $data['last_name'],
-            ':title_after' => $data['title_after'],
-            ':picture_url' => $data['picture_url'],
-            ':location' => $data['location'],
-            ':claim' => $data['claim'],
-            ':bio' => $data['bio'],
-            ':price_per_hour' => $data['price_per_hour']
+            ':title_before' => $data['title_before'] ?? null,
+            ':first_name' => $data['first_name'] ?? null,
+            ':middle_name' => $data['middle_name'] ?? null,
+            ':last_name' => $data['last_name'] ?? null,
+            ':title_after' => $data['title_after'] ?? null,
+            ':picture_url' => $data['picture_url'] ?? null,
+            ':location' => $data['location'] ?? null,
+            ':claim' => $data['claim'] ?? null,
+            ':bio' => $data['bio'] ?? null,
+            ':price_per_hour' => $data['price_per_hour'] ?? null
         ]);
 
         // Vložení tagů, kontrola duplicity
@@ -268,16 +268,16 @@ GROUP BY
 
         $stmt = $pdo->prepare($query);
         $stmt->execute([
-            ':title_before' => $data['title_before'],
-            ':first_name' => $data['first_name'],
-            ':middle_name' => $data['middle_name'],
-            ':last_name' => $data['last_name'],
-            ':title_after' => $data['title_after'],
-            ':picture_url' => $data['picture_url'],
-            ':location' => $data['location'],
-            ':claim' => $data['claim'],
-            ':bio' => $data['bio'],
-            ':price_per_hour' => $data['price_per_hour'],
+            ':title_before' => $data['title_before'] ?? null,
+            ':first_name' => $data['first_name'] ?? null,
+            ':middle_name' => $data['middle_name'] ?? null,
+            ':last_name' => $data['last_name'] ?? null,
+            ':title_after' => $data['title_after'] ?? null,
+            ':picture_url' => $data['picture_url'] ?? null,
+            ':location' => $data['location'] ?? null,
+            ':claim' => $data['claim'] ?? null,
+            ':bio' => $data['bio'] ?? null,
+            ':price_per_hour' => $data['price_per_hour'] ?? null,
             ':uuid' => $uuid
         ]);
 

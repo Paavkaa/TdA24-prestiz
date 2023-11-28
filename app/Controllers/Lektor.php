@@ -49,7 +49,17 @@ class Lektor extends Controller
     public function post(): void
     {
         header('Content-Type: application/json');
-        $uuid = $this->lektorModel->createLector(json_decode(file_get_contents('php://input'), true));
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!isset($data['first_name']) || !isset($data['last_name'])) {
+            http_response_code(400);
+            echo json_encode([
+                'code' => 400,
+                'message' => 'Missing parameter uuid'
+            ]);
+            return;
+        }
+        $uuid = $this->lektorModel->createLector($data);
+
         if ($uuid === false) {
             http_response_code(400);
             echo json_encode([
@@ -64,16 +74,18 @@ class Lektor extends Controller
 
     public function put(stdClass $data): void
     {
-        if (!isset($data->uuid)) {
-            http_response_code(400);
+        $postData = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($data->uuid) || is_null($postData['first_name']) || is_null($postData['last_name'])) {
+            http_response_code(404);
             echo json_encode([
-                'code' => 400,
+                'code' => 404,
                 'message' => 'Missing parameter uuid'
             ]);
             return;
         }
         header('Content-Type: application/json');
-        $response = $this->lektorModel->updateLecturer($data->uuid, json_decode(file_get_contents('php://input'), true));
+        $response = $this->lektorModel->updateLecturer($data->uuid, $postData);
         if ($response === false) {
             http_response_code(400);
             echo json_encode([

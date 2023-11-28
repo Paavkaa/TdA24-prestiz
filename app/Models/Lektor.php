@@ -214,22 +214,136 @@ GROUP BY
         }
 
         // Vložení telefonních čísel
-        if (isset($data['contact']['telephone_numbers']) && is_array($data['contact']['telephone_numbers'])) {
-            foreach ($data['contact']['telephone_numbers'] as $number) {
-                $stmt = $pdo->prepare("INSERT INTO db.telephone_numbers (uuid, user_uuid, number) VALUES (UUID(), :user_uuid, :number)");
-                $stmt->execute([':user_uuid' => $user_uuid, ':number' => $number]);
-            }
-        }
-
-        // Vložení emailových adres
-        if (isset($data['contact']['emails']) && is_array($data['contact']['emails'])) {
-            foreach ($data['contact']['emails'] as $email) {
-                $stmt = $pdo->prepare("INSERT INTO db.email_addresses (uuid, user_uuid, email) VALUES (UUID(), :user_uuid, :email)");
-                $stmt->execute([':user_uuid' => $user_uuid, ':email' => $email]);
-            }
-        }
+        $this->extracted($pdo, $user_uuid, $data);
 
         return $user_uuid;
 
+    }
+
+    /**
+     * @param $pdo
+     * @param string $uuid
+     * @param array $data
+     * @return void
+     */
+    private function extracted($pdo, string $uuid, array $data): void
+    {
+        if (isset($data['contact']['telephone_numbers']) && is_array($data['contact']['telephone_numbers'])) {
+            foreach ($data['contact']['telephone_numbers'] as $number) {
+                $stmt = $pdo->prepare("INSERT INTO db.telephone_numbers (uuid, user_uuid, number) VALUES (UUID(), :user_uuid, :number)");
+                $stmt->execute([':user_uuid' => $uuid, ':number' => $number]);
+            }
+        }
+
+        // Vložení nových emailových adres (zůstává beze změn)
+        if (isset($data['contact']['emails']) && is_array($data['contact']['emails'])) {
+            foreach ($data['contact']['emails'] as $email) {
+                $stmt = $pdo->prepare("INSERT INTO db.email_addresses (uuid, user_uuid, email) VALUES (UUID(), :user_uuid, :email)");
+                $stmt->execute([':user_uuid' => $uuid, ':email' => $email]);
+            }
+        }
+    }
+
+    public function updateLecturer(string $uuid, array $data): bool
+    {
+        if (!$this->lecturerExit($uuid)) {
+            return false;
+        }
+        $pdo = $this->database->getPdo();
+        // Aktualizace záznamu v tabulce 'users'
+        $query = "UPDATE db.users
+                  SET
+                    title_before = COALESCE(:title_before, title_before),
+                    first_name = COALESCE(:first_name, first_name),
+                    middle_name = COALESCE(:middle_name, middle_name),
+                    last_name = COALESCE(:last_name, last_name),
+                    title_after = COALESCE(:title_after, title_after),
+                    picture_url = COALESCE(:picture_url, picture_url),
+                    location = COALESCE(:location, location),
+                    claim = COALESCE(:claim, claim),
+                    bio = COALESCE(:bio, bio),
+                    price_per_hour = COALESCE(:price_per_hour, price_per_hour)
+                  WHERE
+                    uuid = :uuid";
+
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            ':title_before' => $data['title_before'],
+            ':first_name' => $data['first_name'],
+            ':middle_name' => $data['middle_name'],
+            ':last_name' => $data['last_name'],
+            ':title_after' => $data['title_after'],
+            ':picture_url' => $data['picture_url'],
+            ':location' => $data['location'],
+            ':claim' => $data['claim'],
+            ':bio' => $data['bio'],
+            ':price_per_hour' => $data['price_per_hour'],
+            ':uuid' => $uuid
+        ]);
+
+        // Smazání existujících vazeb mezi lektorem a tagy
+        $stmt = $pdo->prepare("DELETE FROM db.users_tags WHERE user_uuid = :uuid");
+        $stmt->execute([':uuid' => $uuid]);
+
+        // Vložení nových vazeb mezi lektorem a tagy (zůstává beze změn)
+        if (isset($data['tags']) && is_array($data['tags'])) {
+            foreach ($data['tags'] as $tag) {
+                $stmt = $pdo->prepare("INSERT IGNORE INTO db.tags (uuid, name) VALUES (UUID(), :name)");
+                $stmt->execute([':name' => $tag['name']]);
+
+                $stmt = $pdo->prepare("SELECT uuid FROM db.tags WHERE name = :name LIMIT 1");
+                $stmt->execute([':name' => $tag['name']]);
+                $tag_uuid = $stmt->fetchColumn();
+
+                $stmt = $pdo->prepare("INSERT INTO db.users_tags (user_uuid, tag_uuid) VALUES (:user_uuid, :tag_uuid)");
+                $stmt->execute([':user_uuid' => $uuid, ':tag_uuid' => $tag_uuid]);
+            }
+        }
+
+        // Smazání existujících telefonních čísel a emailových adres
+        $stmt = $pdo->prepare("DELETE FROM db.telephone_numbers WHERE user_uuid = :uuid");
+        $stmt->execute([':uuid' => $uuid]);
+
+        $stmt = $pdo->prepare("DELETE FROM db.email_addresses WHERE user_uuid = :uuid");
+        $stmt->execute([':uuid' => $uuid]);
+
+        // Vložení nových telefonních čísel (zůstává beze změn)
+        $this->extracted($pdo, $uuid, $data);
+
+        return true;
+    }
+
+    private function lecturerExit(string $uuid): bool
+    {
+        $pdo = $this->database->getPdo();
+        $query = "SELECT * FROM db.users WHERE uuid = :uuid";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute(['uuid' => $uuid]);
+        return count($stmt->fetchAll(PDO::FETCH_ASSOC)) > 0;
+    }
+
+    public function lecturerDelete(string $uuid): bool
+    {
+        if (!$this->lecturerExit($uuid)) {
+            return false;
+        }
+        $pdo = $this->database->getPdo();
+        // Smazání vazeb mezi lektorem a tagy
+        $stmt = $pdo->prepare("DELETE FROM db.users_tags WHERE user_uuid = :uuid");
+        $stmt->execute([':uuid' => $uuid]);
+
+        // Smazání telefonních čísel
+        $stmt = $pdo->prepare("DELETE FROM db.telephone_numbers WHERE user_uuid = :uuid");
+        $stmt->execute([':uuid' => $uuid]);
+
+        // Smazání emailových adres
+        $stmt = $pdo->prepare("DELETE FROM db.email_addresses WHERE user_uuid = :uuid");
+        $stmt->execute([':uuid' => $uuid]);
+        // Smazání záznamu z tabulky 'users'
+        $stmt = $pdo->prepare("DELETE FROM db.users WHERE uuid = :uuid");
+        $stmt->execute([':uuid' => $uuid]);
+
+
+        return true;
     }
 }

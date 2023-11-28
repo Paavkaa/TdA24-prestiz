@@ -62,6 +62,54 @@ class Lektor extends Controller
         }
     }
 
+    public function put(stdClass $data): void
+    {
+        if (!isset($data->uuid)) {
+            http_response_code(400);
+            echo json_encode([
+                'code' => 400,
+                'message' => 'Missing parameter uuid'
+            ]);
+            return;
+        }
+        header('Content-Type: application/json');
+        $response = $this->lektorModel->updateLecturer($data->uuid, json_decode(file_get_contents('php://input'), true));
+        if ($response === false) {
+            http_response_code(400);
+            echo json_encode([
+                'code' => 404,
+                'message' => 'User not found'
+            ]);
+        } else {
+            http_response_code(200);
+            echo json_encode($this->lektorModel->getById($data->uuid));
+        }
+    }
+
+    public function delete(stdClass $data): void
+    {
+        if (!isset($data->uuid)) {
+            http_response_code(400);
+            echo json_encode([
+                'code' => 400,
+                'message' => 'Missing parameter uuid'
+            ]);
+            return;
+        }
+        header('Content-Type: application/json');
+        $response = $this->lektorModel->lecturerDelete($data->uuid);
+        if ($response === false) {
+            http_response_code(404);
+            echo json_encode([
+                'code' => 404,
+                'message' => 'User not found'
+            ]);
+        } else {
+            http_response_code(204);
+        }
+
+    }
+
     public function index(): void
     {
         $view = new View('lektor/index.php');

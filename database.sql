@@ -34,6 +34,7 @@ CREATE TABLE db.telephone_numbers
     uuid      UUID        NOT NULL PRIMARY KEY,
     user_uuid UUID        NOT NULL,
     number    VARCHAR(50) NOT NULL,
+    position  INT         NOT NULL,
     FOREIGN KEY (user_uuid) REFERENCES db.users (uuid)
 );
 
@@ -42,5 +43,6 @@ CREATE TABLE db.email_addresses
     uuid      UUID        NOT NULL PRIMARY KEY,
     user_uuid UUID        NOT NULL,
     email     VARCHAR(50) NOT NULL,
+    position  INT         NOT NULL,
     FOREIGN KEY (user_uuid) REFERENCES db.users (uuid)
 );

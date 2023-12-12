@@ -7,15 +7,17 @@ use PDO;
 
 class Lektor
 {
+    private readonly PDO $pdo;
+
     public function __construct(
         public readonly Database $database
     )
     {
+        $this->pdo = $database->getPdo();
     }
 
     public function getAll(): false|array
     {
-        $pdo = $this->database->getPdo();
 
         $query = "SELECT
     u.uuid,
@@ -28,25 +30,13 @@ class Lektor
     u.location,
     u.claim,
     u.bio,
-    u.price_per_hour,
-    GROUP_CONCAT(DISTINCT t.uuid) AS tag_uuids,
-    GROUP_CONCAT(DISTINCT t.name) AS tag_names,
-    GROUP_CONCAT(DISTINCT tn.number) AS telephone_numbers,
-    GROUP_CONCAT(DISTINCT ea.email) AS email_addresses
+    u.price_per_hour
 FROM
     db.users u
-        LEFT JOIN
-    db.users_tags ut ON u.uuid = ut.user_uuid
-        LEFT JOIN
-    db.tags t ON ut.tag_uuid = t.uuid
-        LEFT JOIN
-    db.telephone_numbers tn ON u.uuid = tn.user_uuid
-        LEFT JOIN
-    db.email_addresses ea ON u.uuid = ea.user_uuid
 GROUP BY
     u.uuid";
 
-        $stmt = $pdo->prepare($query);
+        $stmt = $this->pdo->prepare($query);
         $stmt->execute();
 
         $lecturers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -60,14 +50,35 @@ GROUP BY
         $output = [];
         foreach ($lecturers as $lecturer) {
 
-            $tags = [];
+            $uuid = $lecturer['uuid'];
+            $query = "SELECT tn.number
+        FROM db.telephone_numbers tn
+        WHERE tn.user_uuid = :uuid
+        ORDER BY tn.position";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['uuid' => $uuid]);
+            $phoneNumbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $phoneNumbers = array_map(function ($number) {
+                return $number['number'];
+            }, $phoneNumbers);
+            $query = "SELECT t.uuid,t.name
+        FROM db.tags t
+        LEFT JOIN db.users_tags ut ON t.uuid = ut.tag_uuid
+        WHERE ut.user_uuid = :uuid";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['uuid' => $uuid]);
+            $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Kontrola, zda lektor má tagy
-            if (!empty($lecturer['tag_uuids'])) {
-                $tags = array_map(function ($tagUuid, $tagName) {
-                    return ["uuid" => $tagUuid, "name" => $tagName];
-                }, explode(',', $lecturer['tag_uuids']), explode(',', $lecturer['tag_names']));
-            }
+            $query = "SELECT ea.email
+        FROM db.email_addresses ea
+        WHERE ea.user_uuid = :uuid
+        order by ea.position";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['uuid' => $uuid]);
+            $emails = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $emails = array_map(function ($email) {
+                return $email['email'];
+            }, $emails);
 
             $output[] =
                 [
@@ -84,8 +95,8 @@ GROUP BY
                     "tags" => $tags,
                     "price_per_hour" => (int)$lecturer['price_per_hour'],
                     "contact" => [
-                        "telephone_numbers" => $lecturer['telephone_numbers'] ? explode(',', $lecturer['telephone_numbers']) : [],
-                        "emails" => $lecturer['email_addresses'] ? explode(',', $lecturer['email_addresses']) : []
+                        "telephone_numbers" => $phoneNumbers,
+                        "emails" => $emails
                     ]
                 ];
         }
@@ -107,21 +118,9 @@ GROUP BY
     u.location,
     u.claim,
     u.bio,
-    u.price_per_hour,
-    GROUP_CONCAT(DISTINCT t.uuid) AS tag_uuids,
-    GROUP_CONCAT(DISTINCT t.name) AS tag_names,
-    GROUP_CONCAT(DISTINCT tn.number) AS telephone_numbers,
-    GROUP_CONCAT(DISTINCT ea.email) AS email_addresses
+    u.price_per_hour
 FROM
     db.users u
-        LEFT JOIN
-    db.users_tags ut ON u.uuid = ut.user_uuid
-        LEFT JOIN
-    db.tags t ON ut.tag_uuid = t.uuid
-        LEFT JOIN
-    db.telephone_numbers tn ON u.uuid = tn.user_uuid
-        LEFT JOIN
-    db.email_addresses ea ON u.uuid = ea.user_uuid
 WHERE u.uuid = :uuid
 GROUP BY
     u.uuid
@@ -142,7 +141,6 @@ GROUP BY
 
     public function createLector(array $data): bool|string
     {
-        $pdo = $this->database->getPdo();
         $user_uuid = $this->database->guidv4();
         // Vložení nového uživatele do tabulky 'users'
         $query = "INSERT INTO db.users (
@@ -171,7 +169,7 @@ GROUP BY
                     :price_per_hour
                 )";
 
-        $stmt = $pdo->prepare($query);
+        $stmt = $this->pdo->prepare($query);
         $stmt->execute([
             ':uuid' => $user_uuid,
             ':title_before' => $data['title_before'] ?? null,
@@ -190,7 +188,7 @@ GROUP BY
         if (isset($data['tags']) && is_array($data['tags'])) {
             foreach ($data['tags'] as $tag) {
                 // Zkontrolovat, zda tag s tímto jménem již existuje
-                $stmt = $pdo->prepare("SELECT uuid FROM db.tags WHERE name = :name LIMIT 1");
+                $stmt = $this->pdo->prepare("SELECT uuid FROM db.tags WHERE name = :name LIMIT 1");
                 $stmt->execute([':name' => $tag['name']]);
                 $existing_tag_uuid = $stmt->fetchColumn();
 
@@ -200,7 +198,7 @@ GROUP BY
                 } else {
                     // Tag neexistuje, vložte nový tag
                     $tag_uuid = $this->database->guidv4();
-                    $stmt = $pdo->prepare("INSERT INTO db.tags (uuid, name) VALUES (:uuid, :name)");
+                    $stmt = $this->pdo->prepare("INSERT INTO db.tags (uuid, name) VALUES (:uuid, :name)");
                     $stmt->execute([
                         ':uuid' => $tag_uuid,
                         ':name' => $tag['name']
@@ -208,38 +206,37 @@ GROUP BY
                 }
 
                 // Vložení vazby mezi uživatelem a tagem
-                $stmt = $pdo->prepare("INSERT INTO db.users_tags (user_uuid, tag_uuid) VALUES (:user_uuid, :tag_uuid)");
+                $stmt = $this->pdo->prepare("INSERT INTO db.users_tags (user_uuid, tag_uuid) VALUES (:user_uuid, :tag_uuid)");
                 $stmt->execute([':user_uuid' => $user_uuid, ':tag_uuid' => $tag_uuid]);
             }
         }
 
         // Vložení telefonních čísel
-        $this->extracted($pdo, $user_uuid, $data);
+        $this->extracted($user_uuid, $data);
 
         return $user_uuid;
 
     }
 
     /**
-     * @param $pdo
      * @param string $uuid
      * @param array $data
      * @return void
      */
-    private function extracted($pdo, string $uuid, array $data): void
+    private function extracted(string $uuid, array $data): void
     {
         if (isset($data['contact']['telephone_numbers']) && is_array($data['contact']['telephone_numbers'])) {
-            foreach ($data['contact']['telephone_numbers'] as $number) {
-                $stmt = $pdo->prepare("INSERT INTO db.telephone_numbers (uuid, user_uuid, number) VALUES (UUID(), :user_uuid, :number)");
-                $stmt->execute([':user_uuid' => $uuid, ':number' => $number]);
+            foreach ($data['contact']['telephone_numbers'] as $key => $number) {
+                $stmt = $this->pdo->prepare("INSERT INTO db.telephone_numbers (uuid, user_uuid, number,position) VALUES (UUID(), :user_uuid, :number,:position)");
+                $stmt->execute([':user_uuid' => $uuid, ':number' => $number, ':position' => $key]);
             }
         }
 
         // Vložení nových emailových adres (zůstává beze změn)
         if (isset($data['contact']['emails']) && is_array($data['contact']['emails'])) {
-            foreach ($data['contact']['emails'] as $email) {
-                $stmt = $pdo->prepare("INSERT INTO db.email_addresses (uuid, user_uuid, email) VALUES (UUID(), :user_uuid, :email)");
-                $stmt->execute([':user_uuid' => $uuid, ':email' => $email]);
+            foreach ($data['contact']['emails'] as $key => $email) {
+                $stmt = $this->pdo->prepare("INSERT INTO db.email_addresses (uuid, user_uuid, email,position) VALUES (UUID(), :user_uuid, :email,:position)");
+                $stmt->execute([':user_uuid' => $uuid, ':email' => $email, ':position' => $key]);
             }
         }
     }
@@ -308,7 +305,7 @@ GROUP BY
         $stmt->execute([':uuid' => $uuid]);
 
         // Vložení nových telefonních čísel (zůstává beze změn)
-        $this->extracted($pdo, $uuid, $data);
+        $this->extracted($uuid, $data);
 
         return true;
     }

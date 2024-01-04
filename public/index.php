@@ -12,6 +12,7 @@ $router->addRoute('DELETE', '/api/lecturers/{uuid}', 'Lektor@delete');
 $router->addRoute('GET', '/api/lecturers/{uuid}', 'Lektor@getOne');
 $router->addRoute('GET', 'lecturer', 'Lektor@index');
 $router->addRoute('GET', '/lecturer', 'Lektor@index');
+$router->addRoute('GET', '/lecturer/{uuid}', 'Lektor@viewOne');
 // Add more routes as needed
 
 $router->handleRequest();

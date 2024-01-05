@@ -1,147 +1,242 @@
-@import url('https://fonts.googleapis.com/css2?family=Lalezar&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lalezar&family=Open+Sans&display=swap');
 
-h1,h2,h3,h4,h5,h6
-{
-    font-family: Lalezar;
-    color: #00384D
-}
-label, span
-{
-    font-family: Lalezar;
-    color: #333;
-    font-size: 1,5em;
+
+/* Colors */
+:root {
+    --prussian-blue: #00384D; /*Header and accent color of Light-mode*/
+    --sky-blue: #74C7D3; /* Header and accent color of Dark-mode */
+    --white: #FFFFFF; /*Light-mode background and Dark-mode text color*/
+    --jet: #333333; /*Dark-mode background and Light-mode text color*/
+    --sunglow: #FECB2E; /* Accent color of both modes */
 }
 
-p, li
-{
-    font-family: Open Sans;
-    color: #333;
-    font-size: 1,125em;
+/* Fonts */
+h1, h2, h3, h4, h5, h6 {
+    font-family: Lalezar;
+    color: var(--jet);
 }
 
-h1
-{
-    font-size: 3em;
-}
 h2
-{
-    font-size: 2em;
+
+label, span, button {
+    font-family: Lalezar;
+    font-weight: lighter;
+    color: var(--jet);
+    font-size: 18px;
 }
 
-body
-{
-    background-color: #333;
+p, li, a {
+    font-family: 'Open Sans';
+    color: var(--jet);
+    font-size: 16px;
+}
+
+h1 {
+    font-size: 48px;
+}
+
+h2 {
+    font-size: 32px;
+}
+
+/* Body */
+body {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
+
+    cursor: default;
+
+    margin: 0;
+
+    transition: background-color 0.3s, color 0.3s;
 }
 
-.card
-{
-    width: 80%;
-    background-color: #74C7D3;
-    border-radius: 25px;
-    padding: 40px;
-    display: grid;
-    grid-template-columns: 25% 75%;
-    column-gap: 20px;
+
+/* Header */
+header {
+    height: 150px;
+    width: 100%;
+
+
+    background: rgba(0, 0, 0, 0.);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+
+    z-index: 100;
+    position: fixed;
+    top: 0;
+
+    transition: height 0.3s, padding 0.3s;
+
+    display: flex;
+    align-items: center;
+
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.05);
 }
 
-.card h1
+.shrink
 {
-    margin: 0px;
-}
-.card h2
-{
-    margin-top: 0;
+    height: 50px;
+    transition: height 0.3s;
 }
 
-.card p
+.shrink .dark-mode-toggle
 {
-    margin-top: 0;
-    display: inline;
+    height: 90%;
 }
 
-.card img
+    header span, a {
+        font-size: 32px;
+        color: var(--jet);
+        text-decoration: none;
+        margin: 0px 5px;
+        font-family: Lalezar;
+        font-weight: lighter;
+    }
+
+    header a:hover {
+        color: var(--sky-blue);
+    }
+    
+    header img {
+        height: 60%;
+        padding: 30px;
+    }
+
+/* Background */
+.background
 {
-    width: 75%;
-    border-radius: 50%;
+    width: 100%;
+    height: 30%;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    z-index: -1;
+    opacity: 0.5;
+}
+
+/* Main */
+.content {
+    width: 60%;
+    margin-top: 150px;
     margin-bottom: 50px;
 }
 
-.contact
+    /* Heading of the page */
+    .heading {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        gap: 50px;
+        margin-top: 50px;
+        margin-bottom: 50px;
+    }
+    .heading img {
+        max-width: 300px;
+        min-width: 100px;
+
+        border-radius: 15%;
+    }
+
+    @media screen and (max-width: 1000px) {
+        .heading {
+            flex-direction: column-reverse;
+        }
+        
+    }
+
+    /* Contacts */
+    .contact {
+        display: inline-block;
+        vertical-align: top;
+    }
+
+    /* Info about lecturer */
+    .info p {
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+
+    /*Tags*/
+    .tag
+    {
+        all: unset;
+        cursor: pointer;
+
+        font-family: Open sans;
+        font-weight: bold;
+
+        display: inline-block;
+        border-radius: 10px;
+
+        background-color: var(--sunglow);
+        color: var(--jet);
+
+        padding: 5px 10px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+
+    #tags
+    {
+        margin: -25px 0px 50px 0px;
+    }
+
+    .dark-mode .tag
+    {
+        color: var(--jet);
+    }
+
+/* Dark-mode */
+.dark-mode
 {
-    display: inline-block;
-    vertical-align: top;
+    background-color: var(--jet);
 }
 
-.center {
+.dark-mode p,
+.dark-mode a,
+.dark-mode li,
+.dark-mode span,
+.dark-mode label,
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6,
+.dark-mode button {
+    color: var(--white);
+}
+
+
+.dark-mode-toggle {
+    all: unset;
+    cursor: pointer;
+    height: 50%;
+
     display: flex;
-    flex-direction: column;
     align-items: center;
-    text-align: center;
+    justify-content: center;
+    flex-direction: column;
+
+    padding: 20px;
+    margin-left: auto;
 }
 
-.center ul {
-    padding: 0;
-    list-style: none;
+.dark-mode-toggle img {
     margin: 0;
-    margin-top: auto;
+    padding: 0;
 }
 
-.center li {
-    margin-bottom: 10px;
-    list-style: none;
-    background-color: #FECB2E;
-    border-radius: 50px;
-    width: 200px;
-    padding: 5px 10px;
-}
-
-
-@media screen and (max-width: 768px)
+.dark-mode-toggle p
 {
-    .card
-    {
-        grid-template-columns: 100%;
-    }
-    .contact
-    {
-        margin-top: 20px;
-    }
-    .card img
-    {
-        width: 250px;
-    }
-    
+    margin: 0;
 }
 
-@media screen and (max-width: 480px)
+.dark-mode-toggle a
 {
-    .card
-    {
-        width: 100%;
-    }
-    .card img
-    {
-        width: 100%;
-    }
-    h1
-    {
-        font-size: 2em;
-    }
-    h2
-    {
-        font-size: 1.5em;
-    }
-    p
-    {
-        font-size: 1em;
-    }
-    .contact
-    {
-        margin-top: 0px;
-    }
-    
+    font-family: Lalezar;
 }

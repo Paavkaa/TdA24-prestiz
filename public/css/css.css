@@ -1,44 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Lalezar&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lalezar&family=Open+Sans&display=swap');
 
-h1,h2,h3,h4,h5,h6
-{
+h1, h2, h3, h4, h5, h6 {
     font-family: Lalezar;
     color: #00384D
 }
-label, span
-{
+
+label, span {
     font-family: Lalezar;
     color: #333;
-    font-size: 1,5em;
+    font-size: 1.5em;
 }
 
-p, li
-{
+p, li {
     font-family: Open Sans;
     color: #333;
-    font-size: 1,125em;
+    font-size: 1.125em;
 }
 
-h1
-{
+h1 {
     font-size: 3em;
 }
-h2
-{
+
+h2 {
     font-size: 2em;
 }
 
-body
-{
+body {
     /* background-color: #333; */
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.card
-{
+.card {
     width: 80%;
     background-color: #74C7D3;
     border-radius: 25px;
@@ -48,30 +43,26 @@ body
     column-gap: 20px;
 }
 
-.card h1
-{
-    margin: 0px;
+.card h1 {
+    margin: 0;
 }
-.card h2
-{
+
+.card h2 {
     margin-top: 0;
 }
 
-.card p
-{
+.card p {
     margin-top: 0;
     display: inline;
 }
 
-.card img
-{
+.card img {
     width: 75%;
     border-radius: 50%;
     margin-bottom: 50px;
 }
 
-.contact
-{
+.contact {
     display: inline-block;
     vertical-align: top;
 }
@@ -100,48 +91,44 @@ body
 }
 
 
-@media screen and (max-width: 768px)
-{
-    .card
-    {
+@media screen and (max-width: 768px) {
+    .card {
         grid-template-columns: 100%;
     }
-    .contact
-    {
+
+    .contact {
         margin-top: 20px;
     }
-    .card img
-    {
+
+    .card img {
         width: 250px;
     }
-    
+
 }
 
-@media screen and (max-width: 480px)
-{
-    .card
-    {
+@media screen and (max-width: 480px) {
+    .card {
         width: 100%;
     }
-    .card img
-    {
+
+    .card img {
         width: 100%;
     }
-    h1
-    {
+
+    h1 {
         font-size: 2em;
     }
-    h2
-    {
+
+    h2 {
         font-size: 1.5em;
     }
-    p
-    {
+
+    p {
         font-size: 1em;
     }
-    .contact
-    {
-        margin-top: 0px;
+
+    .contact {
+        margin-top: 0;
     }
-    
+
 }

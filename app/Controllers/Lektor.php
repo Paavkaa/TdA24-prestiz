@@ -134,7 +134,7 @@ class Lektor extends Controller
         }
         $uuid = $data->uuid;
         $lektor = $this->lektorModel->getById($uuid);
-        $view = new View('lektor/lektor.php');
+        $view = new View('lektor/index.php');
         $view->render($lektor);
 
     }

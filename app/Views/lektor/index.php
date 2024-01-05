@@ -28,12 +28,18 @@
 
     <div class="heading">
 
-        <img src="https://tourdeapp.cz/storage/images/2023_02_25/412ff296a291f021bbb6de10e8d0b94863fa89308843b/big.png.webp"
+        <img src="<?php echo $data['picture_url'] ?? "" ?>"
              alt="lector_pic">
         <div>
 
-            <h1>Mgr. Petra Swil Plachá MBA</h1>
-            <h2>Aktivní studentka / Předsedkyně spolku / Projektová manažerka</h2>
+            <h1>
+                <?php echo $data['title_before'] ?? "" ?>
+                <?php echo $data['first_name'] ?? "" ?>
+                <?php echo $data['middle_name'] ?? "" ?>
+                <?php echo $data['last_name'] ?? "" ?>
+                <?php echo $data['title_before'] ?? "" ?>
+            </h1>
+            <h2><?php echo $data['claim'] ?? "" ?></h2>
 
         </div>
 
@@ -41,39 +47,42 @@
 
     <div class="info">
 
-        <div id="tags">
-            <a class="tag" href="#">Dobrovolnictví</a>
-            <a class="tag" href="#">Studentské spolky</a>
-            <a class="tag" href="#">Prezentační dovednosti</a>
-            <a class="tag" href="#">Marketing pro neziskové studentské projekty</a>
-            <a class="tag" href="#">Mimoškolní aktivity</a>
-            <a class="tag" href="#">Projektový management, event management</a>
-            <a class="tag" href="#">Fundraising pro neziskové studentské projekty</a>
-            <button class="tag" id="showTags">+</button>
-            <button class="tag" id="hideTags">-</button>
-        </div>
-
+        <?php if (isset($data['tags']) && is_array($data['tags'])): ?>
+            <div id="tags">
+                <?php foreach ($data['tags'] as $tag): ?>
+                    <a class="tag" href="#"><?= htmlspecialchars($tag['name']) ?></a>
+                <?php endforeach; ?>
+                <button class="tag" id="showTags">+</button>
+                <button class="tag" id="hideTags">-</button>
+            </div>
+        <?php endif; ?>
         <span>Lokalita:</span>
-        <p>Brno</p> <br>
+        <p><?php echo $data['location'] ?? "" ?></p> <br>
         <span>Cena za hodinu:</span>
-        <p>1200 Kč</p> <br>
+        <p><?php echo $data['price_per_hour'] ?? "" ?> Kč</p> <br>
         <span>Kontakt:</span> <br>
         <table class="contact">
             <tr>
-                <td><p>+420 722 482 974</p></td>
+                <td>
+                    <p>
+                        <?php echo implode(" , ", array_values($data['contact']['telephone_numbers'])) ?? "" ?>
+                    </p>
+                </td>
             </tr>
             <tr>
-                <td><p>placha@scg.cz, predseda@scg.cz</p></td>
+                <td>
+                    <p>
+                        <?php echo implode(" , ", array_values($data['contact']['emails'])) ?? "" ?>
+                    </p>
+                </td>
             </tr>
         </table>
         <br>
 
         <span>O mně:</span> <br>
-        <p>Baví mě organizovat věci. Ať už to bylo vyvíjení mobilních aplikací ve Futured, pořádání konferencí,
-            spolupráce na soutěžích Prezentiáda, pIšQworky, <b>Tour de App</b> a Středoškolák roku, nebo třeba
-            dobrovolnictví, vždycky jsem skončila u projektového managementu, rozvíjení soft-skills a vzdělávání. U
-            studentských projektů a akcí jsem si vyzkoušela snad všechno od marketingu po logistiku a moc ráda to předám
-            dál. Momentálně studuji Pdf MUNI a FF MUNI v Brně.</p>
+        <p>
+            <?php echo $data['bio'] ?? "" ?>
+        </p>
     </div>
 
 </div>

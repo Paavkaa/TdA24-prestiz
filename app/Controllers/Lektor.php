@@ -122,6 +122,23 @@ class Lektor extends Controller
 
     }
 
+    public function viewOne(stdClass $data): void
+    {
+        if (!isset($data->uuid)) {
+            http_response_code(400);
+            echo json_encode([
+                'code' => 400,
+                'message' => 'Missing parameter uuid'
+            ]);
+            return;
+        }
+        $uuid = $data->uuid;
+        $lektor = $this->lektorModel->getById($uuid);
+        $view = new View('lektor/lektor.php');
+        $view->render($lektor);
+
+    }
+
     public function index(): void
     {
         $view = new View('lektor/index.php');

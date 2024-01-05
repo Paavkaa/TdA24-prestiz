@@ -103,42 +103,6 @@ GROUP BY
         return $output;
     }
 
-    public function getById(string $uuid): false|array
-    {
-        $pdo = $this->database->getPdo();
-
-        $query = "SELECT
-    u.uuid,
-    u.title_before,
-    u.first_name,
-    u.middle_name,
-    u.last_name,
-    u.title_after,
-    u.picture_url,
-    u.location,
-    u.claim,
-    u.bio,
-    u.price_per_hour
-FROM
-    db.users u
-WHERE u.uuid = :uuid
-GROUP BY
-    u.uuid
-    ";
-
-        $stmt = $pdo->prepare($query);
-        $stmt->execute(['uuid' => $uuid]);
-
-        $lecturers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        // Vytvoření výstupního JSON formátu
-        $lector = $this->convertLectors($lecturers);
-        if (count($lector) > 0) {
-            return $lector[0];
-        } else {
-            return false;
-        }
-    }
-
     public function createLector(array $data): bool|string
     {
         $user_uuid = $this->database->guidv4();
@@ -246,19 +210,35 @@ GROUP BY
         if (!$this->lecturerExit($uuid)) {
             return false;
         }
+        $lecturerData = $this->getById($uuid);
+        foreach ($lecturerData as $key => $value) {
+            if ($key === 'contact' || $key === 'tags') {
+                continue;
+            }
+            // Pokud klíč neexistuje v poli uživatelského vstupu, přidáme hodnotu z databáze
+            if (!array_key_exists($key, $data)) {
+                $data[$key] = $value;
+            } else {
+                // Pokud klíč existuje, ale hodnota je NULL, necháme ji tak
+                if ($data[$key] === null) {
+                    $data[$key] = null;
+                }
+                // Jinak uživatelský vstup má přednost a ponecháme hodnotu, kterou uživatel zadal
+            }
+        }
         // Aktualizace záznamu v tabulce 'users'
         $query = "UPDATE db.users
                   SET
-                    title_before = COALESCE(:title_before, title_before),
-                    first_name = COALESCE(:first_name, first_name),
-                    middle_name = COALESCE(:middle_name, middle_name),
-                    last_name = COALESCE(:last_name, last_name),
-                    title_after = COALESCE(:title_after, title_after),
-                    picture_url = COALESCE(:picture_url, picture_url),
-                    location = COALESCE(:location, location),
-                    claim = COALESCE(:claim, claim),
-                    bio = COALESCE(:bio, bio),
-                    price_per_hour = COALESCE(:price_per_hour, price_per_hour)
+                    title_before = :title_before,
+                    first_name = :first_name,
+                    middle_name = :middle_name,
+                    last_name = :last_name,
+                    title_after = :title_after,
+                    picture_url = :picture_url,
+                    location = :location,
+                    claim = :claim,
+                    bio = :bio,
+                    price_per_hour = :price_per_hour
                   WHERE
                     uuid = :uuid";
 
@@ -277,12 +257,12 @@ GROUP BY
             ':uuid' => $uuid
         ]);
 
-        // Smazání existujících vazeb mezi lektorem a tagy
-        $stmt = $this->pdo->prepare("DELETE FROM db.users_tags WHERE user_uuid = :uuid");
-        $stmt->execute([':uuid' => $uuid]);
-
         // Vložení nových vazeb mezi lektorem a tagy (zůstává beze změn)
         if (isset($data['tags']) && is_array($data['tags'])) {
+            // Smazání existujících vazeb mezi lektorem a tagy
+            $stmt = $this->pdo->prepare("DELETE FROM db.users_tags WHERE user_uuid = :uuid");
+            $stmt->execute([':uuid' => $uuid]);
+
             foreach ($data['tags'] as $tag) {
                 $stmt = $this->pdo->prepare("INSERT IGNORE INTO db.tags (uuid, name) VALUES (UUID(), :name)");
                 $stmt->execute([':name' => $tag['name']]);
@@ -296,13 +276,16 @@ GROUP BY
             }
         }
 
-        // Smazání existujících telefonních čísel a emailových adres
-        $stmt = $this->pdo->prepare("DELETE FROM db.telephone_numbers WHERE user_uuid = :uuid");
-        $stmt->execute([':uuid' => $uuid]);
-
-        $stmt = $this->pdo->prepare("DELETE FROM db.email_addresses WHERE user_uuid = :uuid");
-        $stmt->execute([':uuid' => $uuid]);
-
+        if (isset($data['contact']['telephone_numbers']) && is_array($data['contact']['telephone_numbers'])) {
+            // Smazání existujících telefonních čísel
+            $stmt = $this->pdo->prepare("DELETE FROM db.telephone_numbers WHERE user_uuid = :uuid");
+            $stmt->execute([':uuid' => $uuid]);
+        }
+        if (isset($data['contact']['emails']) && is_array($data['contact']['emails'])) {
+            // Smazání existujících emailových adres
+            $stmt = $this->pdo->prepare("DELETE FROM db.email_addresses WHERE user_uuid = :uuid");
+            $stmt->execute([':uuid' => $uuid]);
+        }
         // Vložení nových telefonních čísel (zůstává beze změn)
         $this->extracted($uuid, $data);
 
@@ -316,6 +299,42 @@ GROUP BY
         $stmt = $pdo->prepare($query);
         $stmt->execute(['uuid' => $uuid]);
         return count($stmt->fetchAll(PDO::FETCH_ASSOC)) > 0;
+    }
+
+    public function getById(string $uuid): false|array
+    {
+        $pdo = $this->database->getPdo();
+
+        $query = "SELECT
+    u.uuid,
+    u.title_before,
+    u.first_name,
+    u.middle_name,
+    u.last_name,
+    u.title_after,
+    u.picture_url,
+    u.location,
+    u.claim,
+    u.bio,
+    u.price_per_hour
+FROM
+    db.users u
+WHERE u.uuid = :uuid
+GROUP BY
+    u.uuid
+    ";
+
+        $stmt = $pdo->prepare($query);
+        $stmt->execute(['uuid' => $uuid]);
+
+        $lecturers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Vytvoření výstupního JSON formátu
+        $lector = $this->convertLectors($lecturers);
+        if (count($lector) > 0) {
+            return $lector[0];
+        } else {
+            return false;
+        }
     }
 
     public function lecturerDelete(string $uuid): bool

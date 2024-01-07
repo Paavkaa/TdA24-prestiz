@@ -6,6 +6,7 @@ use Core\Controller;
 use App\Models\Lektor as LektorModel;
 use \App\Views\View;
 use stdClass;
+use Core\Http\Request;
 
 class Lektor extends Controller
 {
@@ -22,8 +23,9 @@ class Lektor extends Controller
         echo json_encode($lektor);
     }
 
-    public function getOne(stdClass $params): void
+    public function getOne(Request $request): void
     {
+        $params = $request->getUrlParams();
         if (!isset($params->uuid)) {
             http_response_code(400);
             echo json_encode([
@@ -46,11 +48,11 @@ class Lektor extends Controller
         echo json_encode($lektor);
     }
 
-    public function post(): void
+    public function post(Request $request): void
     {
         header('Content-Type: application/json');
-        $data = json_decode(file_get_contents('php://input'), true);
-        if (!isset($data['first_name']) || !isset($data['last_name'])) {
+        $data = $request->getBody();
+        if (!isset($data->first_name) || !isset($data->last_name)) {
             http_response_code(400);
             echo json_encode([
                 'code' => 400,
@@ -58,7 +60,7 @@ class Lektor extends Controller
             ]);
             return;
         }
-        $uuid = $this->lektorModel->createLector($data);
+        $uuid = $this->lektorModel->createLector((array)$data);
 
         if ($uuid === false) {
             http_response_code(400);
@@ -72,9 +74,10 @@ class Lektor extends Controller
         }
     }
 
-    public function put(stdClass $data): void
+    public function put(Request $request): void
     {
-        $postData = json_decode(file_get_contents('php://input'), true);
+        $data = $request->getUrlParams();
+        $postData = (array)$request->getBody();
 
         if (!isset($data->uuid) || is_null($postData['first_name']) || is_null($postData['last_name'])) {
             http_response_code(404);
@@ -98,8 +101,9 @@ class Lektor extends Controller
         }
     }
 
-    public function delete(stdClass $data): void
+    public function delete(Request $request): void
     {
+        $data = $request->getUrlParams();
         if (!isset($data->uuid)) {
             http_response_code(400);
             echo json_encode([
@@ -122,8 +126,9 @@ class Lektor extends Controller
 
     }
 
-    public function viewOne(stdClass $data): void
+    public function viewOne(Request $request): void
     {
+        $data = $request->getUrlParams();
         if (!isset($data->uuid)) {
             http_response_code(400);
             echo json_encode([
@@ -134,6 +139,14 @@ class Lektor extends Controller
         }
         $uuid = $data->uuid;
         $lektor = $this->lektorModel->getById($uuid);
+        if ($lektor === false) {
+            http_response_code(404);
+            echo json_encode([
+                'code' => 404,
+                'message' => 'User not found'
+            ]);
+            return;
+        }
         $view = new View('lektor/index.php');
         $view->render($lektor);
 

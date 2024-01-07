@@ -14,7 +14,7 @@ class View
     public function render($data): void
     {
         // Extrahujeme data, aby byly přímo přístupné v pohledu
-        extract($data);
+        extract((array)$data);
 
         // Vložíme pohled
         include($this->viewFile);

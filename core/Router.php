@@ -2,6 +2,7 @@
 
 namespace Core;
 
+use Core\Http\Request;
 use DI\Container;
 
 class Router
@@ -83,13 +84,10 @@ class Router
                 return;
             }
 
+            $request = new Request($params);
             if (method_exists($controllerInstance, $action)) {
                 // Call the controller action method
-                if ($params) {
-                    $controllerInstance->$action($params);
-                } else {
-                    $controllerInstance->$action();
-                }
+                $controllerInstance->$action($request);
             } else {
                 // Handle 404 Not Found for missing action
                 http_response_code(404);

@@ -2,6 +2,8 @@
 
 namespace Core;
 
+use Core\Http\Request;
+
 abstract class Controller
 {
     public function get(): void
@@ -9,7 +11,7 @@ abstract class Controller
         throw new \Exception('Not implemented');
     }
 
-    public function post(): void
+    public function post(Request $request): void
     {
         throw new \Exception('Not implemented');
     }

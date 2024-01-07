@@ -16,10 +16,11 @@ class Lektor extends Controller
     {
     }
 
-    public function get(): void
+    public function get(Request $request): void
     {
+        $where = $request->getQueryParams()?->where ?? null;
         header('Content-Type: application/json');
-        $lektor = $this->lektorModel->getAll();
+        $lektor = $this->lektorModel->getAll($where);
         echo json_encode($lektor);
     }
 

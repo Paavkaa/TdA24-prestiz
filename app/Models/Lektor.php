@@ -16,91 +16,114 @@ class Lektor
         $this->pdo = $database->getPdo();
     }
 
-    public function getAll(): false|array
+    public function getAll(?array $where = null): false|array
     {
+        $whereClauses = [];
+        $bindings = [];
 
-        $query = "SELECT
-    u.uuid,
-    u.title_before,
-    u.first_name,
-    u.middle_name,
-    u.last_name,
-    u.title_after,
-    u.picture_url,
-    u.location,
-    u.claim,
-    u.bio,
-    u.price_per_hour
-FROM
-    db.users u
-GROUP BY
-    u.uuid";
+        // Přidání podmínek pro běžné sloupce
+        if ($where !== null) {
+            foreach ($where as $key => $value) {
+                if ($key === 'tags' || $key === 'contact' || $key === 'emails' || $key === 'telephone_numbers') {
+                    continue;
+                }
+                $whereClauses[] = "u.{$key} LIKE :{$key}";
+                $bindings[$key] = "%{$value}%";
+            }
+        }
 
+        // Přidání podmínek pro tagy
+        $tagsJoin = '';
+        if (isset($where['tags']) && is_array($where['tags'])) {
+            $uniqueTags = array_unique($where['tags']);
+            $tagsCount = count($uniqueTags);
+            $tagsJoin = "
+            JOIN (
+                SELECT ut.user_uuid
+                FROM db.users_tags ut
+                WHERE ut.tag_uuid IN (" . implode(',', array_fill(0, $tagsCount, '?')) . ")
+                GROUP BY ut.user_uuid
+                HAVING COUNT(DISTINCT ut.tag_uuid) = $tagsCount
+            ) AS tags_join ON u.uuid = tags_join.user_uuid
+        ";
+            $bindings = array_merge($bindings, $uniqueTags);
+        }
+
+        $whereSQL = $whereClauses ? 'WHERE ' . implode(' AND ', $whereClauses) : '';
+
+        // Hlavní dotaz s JOINy pro telefonní čísla, emaily a tagy
+        $query = "
+        SELECT
+            u.uuid,
+            u.title_before,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.title_after,
+            u.picture_url,
+            u.location,
+            u.claim,
+            u.bio,
+            u.price_per_hour,
+            GROUP_CONCAT(DISTINCT tn.number) AS telephone_numbers,
+            GROUP_CONCAT(DISTINCT ea.email) AS emails,
+            GROUP_CONCAT(DISTINCT CONCAT_WS(':', t.uuid, t.name)) AS tags
+        FROM
+            db.users u
+            LEFT JOIN db.telephone_numbers tn ON u.uuid = tn.user_uuid
+            LEFT JOIN db.email_addresses ea ON u.uuid = ea.user_uuid
+            LEFT JOIN db.users_tags ut ON u.uuid = ut.user_uuid
+            LEFT JOIN db.tags t ON ut.tag_uuid = t.uuid
+        $tagsJoin
+        $whereSQL
+        GROUP BY
+            u.uuid
+    ";
         $stmt = $this->pdo->prepare($query);
+
+        // Bind the parameters
+        foreach ($bindings as $key => $value) {
+            if (is_int($key)) {
+                $stmt->bindValue($key + 1, $value);
+            } else {
+                $stmt->bindValue(":{$key}", $value);
+            }
+        }
+
         $stmt->execute();
 
         $lecturers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        // Vytvoření výstupního JSON formátu
         return $this->convertLectors($lecturers);
-
     }
 
     private function convertLectors(array $lecturers): array
     {
-        $output = [];
-        foreach ($lecturers as $lecturer) {
+        return array_map(function ($lecturer) {
+            // Rozdělení tagů a jejich uuid
+            $tags = array_map(function ($tag) {
+                [$uuid, $name] = explode(':', $tag);
+                return ['uuid' => $uuid, 'name' => $name];
+            }, explode(',', $lecturer['tags']));
 
-            $uuid = $lecturer['uuid'];
-            $query = "SELECT tn.number
-        FROM db.telephone_numbers tn
-        WHERE tn.user_uuid = :uuid
-        ORDER BY tn.position";
-            $stmt = $this->pdo->prepare($query);
-            $stmt->execute(['uuid' => $uuid]);
-            $phoneNumbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $phoneNumbers = array_map(function ($number) {
-                return $number['number'];
-            }, $phoneNumbers);
-            $query = "SELECT t.uuid,t.name
-        FROM db.tags t
-        LEFT JOIN db.users_tags ut ON t.uuid = ut.tag_uuid
-        WHERE ut.user_uuid = :uuid";
-            $stmt = $this->pdo->prepare($query);
-            $stmt->execute(['uuid' => $uuid]);
-            $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $query = "SELECT ea.email
-        FROM db.email_addresses ea
-        WHERE ea.user_uuid = :uuid
-        order by ea.position";
-            $stmt = $this->pdo->prepare($query);
-            $stmt->execute(['uuid' => $uuid]);
-            $emails = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $emails = array_map(function ($email) {
-                return $email['email'];
-            }, $emails);
-
-            $output[] =
-                [
-                    "uuid" => $lecturer['uuid'],
-                    "title_before" => $lecturer['title_before'],
-                    "first_name" => $lecturer['first_name'],
-                    "middle_name" => $lecturer['middle_name'],
-                    "last_name" => $lecturer['last_name'],
-                    "title_after" => $lecturer['title_after'],
-                    "picture_url" => $lecturer['picture_url'],
-                    "location" => $lecturer['location'],
-                    "claim" => $lecturer['claim'],
-                    "bio" => $lecturer['bio'],
-                    "tags" => $tags,
-                    "price_per_hour" => (int)$lecturer['price_per_hour'],
-                    "contact" => [
-                        "telephone_numbers" => $phoneNumbers,
-                        "emails" => $emails
-                    ]
-                ];
-        }
-        return $output;
+            return [
+                "uuid" => $lecturer['uuid'],
+                "title_before" => $lecturer['title_before'],
+                "first_name" => $lecturer['first_name'],
+                "middle_name" => $lecturer['middle_name'],
+                "last_name" => $lecturer['last_name'],
+                "title_after" => $lecturer['title_after'],
+                "picture_url" => $lecturer['picture_url'],
+                "location" => $lecturer['location'],
+                "claim" => $lecturer['claim'],
+                "bio" => $lecturer['bio'],
+                "tags" => $tags,
+                "price_per_hour" => (int)$lecturer['price_per_hour'],
+                "contact" => [
+                    "telephone_numbers" => explode(',', $lecturer['telephone_numbers']),
+                    "emails" => explode(',', $lecturer['emails']),
+                ]
+            ];
+        }, $lecturers);
     }
 
     public function createLector(array $data): bool|string
@@ -207,7 +230,7 @@ GROUP BY
 
     public function updateLecturer(string $uuid, array $data): bool
     {
-        if (!$this->lecturerExit($uuid)) {
+        if (!$this->lecturerExists($uuid)) {
             return false;
         }
         $lecturerData = $this->getById($uuid);
@@ -292,38 +315,46 @@ GROUP BY
         return true;
     }
 
-    private function lecturerExit(string $uuid): bool
+    private function lecturerExists(string $uuid): bool
     {
-        $pdo = $this->database->getPdo();
-        $query = "SELECT * FROM db.users WHERE uuid = :uuid";
-        $stmt = $pdo->prepare($query);
+        $query = "SELECT COUNT(*) FROM db.users WHERE uuid = :uuid";
+        $stmt = $this->pdo->prepare($query);
         $stmt->execute(['uuid' => $uuid]);
-        return count($stmt->fetchAll(PDO::FETCH_ASSOC)) > 0;
+        return $stmt->fetchColumn() > 0;
     }
 
     public function getById(string $uuid): false|array
     {
         $pdo = $this->database->getPdo();
 
-        $query = "SELECT
-    u.uuid,
-    u.title_before,
-    u.first_name,
-    u.middle_name,
-    u.last_name,
-    u.title_after,
-    u.picture_url,
-    u.location,
-    u.claim,
-    u.bio,
-    u.price_per_hour
-FROM
-    db.users u
-WHERE u.uuid = :uuid
-GROUP BY
-    u.uuid
-    ";
 
+        $query = "
+        SELECT
+            u.uuid,
+            u.title_before,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.title_after,
+            u.picture_url,
+            u.location,
+            u.claim,
+            u.bio,
+            u.price_per_hour,
+            GROUP_CONCAT(DISTINCT tn.number) AS telephone_numbers,
+            GROUP_CONCAT(DISTINCT ea.email) AS emails,
+            GROUP_CONCAT(DISTINCT CONCAT_WS(':', t.uuid, t.name)) AS tags
+        FROM
+            db.users u
+            LEFT JOIN db.telephone_numbers tn ON u.uuid = tn.user_uuid
+            LEFT JOIN db.email_addresses ea ON u.uuid = ea.user_uuid
+            LEFT JOIN db.users_tags ut ON u.uuid = ut.user_uuid
+            LEFT JOIN db.tags t ON ut.tag_uuid = t.uuid
+        WHERE
+            u.uuid = :uuid
+        GROUP BY
+            u.uuid
+    ";
         $stmt = $pdo->prepare($query);
         $stmt->execute(['uuid' => $uuid]);
 
@@ -339,7 +370,7 @@ GROUP BY
 
     public function lecturerDelete(string $uuid): bool
     {
-        if (!$this->lecturerExit($uuid)) {
+        if (!$this->lecturerExists($uuid)) {
             return false;
         }
         $pdo = $this->database->getPdo();

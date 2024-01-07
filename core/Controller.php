@@ -6,7 +6,7 @@ use Core\Http\Request;
 
 abstract class Controller
 {
-    public function get(): void
+    public function get(Request $request): void
     {
         throw new \Exception('Not implemented');
     }
